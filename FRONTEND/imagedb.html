@@ -119,7 +119,7 @@
     // Load selected gym plans
     async function loadPlans() {
       try {
-        const response = await fetch('https://r2f.vercel.app/admin/plans');
+        const response = await fetch('https://r2fold.vercel.app/admin/plans');
         const plans = await response.json();
         const container = document.getElementById('plansContainer');
         container.innerHTML = plans.map(plan => `
