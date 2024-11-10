@@ -16,7 +16,7 @@ const app = express();
 // const port = 3000;
 const port = process.env.PORT || 3000;
 app.use(cors({
-  origin: 'https://r2fold.vercel.app/', 
+  origin: 'https://r2f.vercel.app/', 
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'x-auth-token'],
   credentials: true
@@ -493,17 +493,6 @@ app.delete('/images/:id', async (req, res) => {
     res.status(500).json({ message: 'Error deleting image', error });
   }
 });
-const response = await fetch('/images', { method: 'POST', body: formData });
-const text = await response.text();  // Log the response as text
-console.log(text);  // This will show if the response is HTML
-
-try {
-    const result = JSON.parse(text);
-    alert(result.message);
-} catch (error) {
-    console.error("Error parsing JSON:", error);
-}
-
 // Delete a comment
 app.delete('/comments/:id', async (req, res) => {
   const { id } = req.params;
@@ -558,33 +547,33 @@ app.post('/comments', async (req, res) => {
 
 // Routes for images
 // Upload image with statement
-app.post('/upload', upload.single('image'), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ message: 'No file uploaded' });
-  }
+// app.post('/upload', upload.single('image'), async (req, res) => {
+//   if (!req.file) {
+//     return res.status(400).json({ message: 'No file uploaded' });
+//   }
 
-  const image = new Image({
-    url: req.file.path,
-    statement: req.body.statement
-  });
+//   const image = new Image({
+//     url: req.file.path,
+//     statement: req.body.statement
+//   });
 
-  try {
-    await image.save();
-    res.status(200).json({ message: 'Image uploaded successfully', file: req.file });
-  } catch (error) {
-    res.status(500).json({ message: 'Error saving image to database', error });
-  }
-});
+//   try {
+//     await image.save();
+//     res.status(200).json({ message: 'Image uploaded successfully', file: req.file });
+//   } catch (error) {
+//     res.status(500).json({ message: 'Error saving image to database', error });
+//   }
+// });
 
-// Fetch images
-app.get('/images', async (req, res) => {
-  try {
-    const images = await Image.find();
-    res.status(200).json(images);
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching images', error });
-  }
-});
+// // Fetch images
+// app.get('/images', async (req, res) => {
+//   try {
+//     const images = await Image.find();
+//     res.status(200).json(images);
+//   } catch (error) {
+//     res.status(500).json({ message: 'Error fetching images', error });
+//   }
+// });
 
 // Serve the display page
 app.get('/display', (req, res) => {

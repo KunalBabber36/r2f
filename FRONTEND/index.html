@@ -802,17 +802,17 @@
     </div>
   </section>
 
-  <section class="blog" id="blog">
+  <!-- <section class="blog" id="blog">
     <div class="section__container blog__container">
       <h2 class="section__header">GYM UPDATES</h2>
       <div class="blog__grid">
         <div class="blog__card">
-          <div id="imagesList"></div>
+          <div id="image-gallery"></div>
         </div>
         <div class="blog__btn">
         </div>
       </div>
-  </section>
+  </section> -->
   <div class="comments-container">
     <h2>Leave a Comment</h2>
     <form id="commentForm">
@@ -915,7 +915,7 @@
 
     http://localhost:3000/api/data
     // Example: fetching data from the backend
-    fetch('https://r2fold.vercel.app/api/data')
+    fetch('https://r2f.vercel.app/api/data')
       .then(response => response.json())
       .then(data => {
         console.log(data);
@@ -1105,7 +1105,7 @@
 
     // Function to load comments from the database
     async function loadComments() {
-      const response = await fetch('https://r2fold.vercel.app/comments');
+      const response = await fetch('https://r2f.vercel.app/comments');
       const comments = await response.json();
       const commentsList = document.getElementById('commentsList');
 
@@ -1132,7 +1132,7 @@
 
     // Function to add a comment to the database
     async function addComment(commentText, userName) {
-      await fetch('https://r2fold.vercel.app/comments', {
+      await fetch('https://r2f.vercel.app/comments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1179,7 +1179,7 @@
     }
 
     // Fetch images from the server
-    fetch('https://r2fold.vercel.app/images') // Specify full URL for better debugging
+    fetch('https://r2f.vercel.app/images') // Specify full URL for better debugging
       .then(response => {
         if (!response.ok) {
           throw new Error('Network response was not ok: ' + response.statusText);
@@ -1187,14 +1187,14 @@
         return response.json();
       })
       .then(images => {
-        const gallery = document.getElementById('imagesList');
+        const gallery = document.getElementById('image-gallery');
         gallery.innerHTML = ''; // Clear existing gallery content
 
         images.forEach(image => {
           // Create an img element for each image
           const img = document.createElement('img');
           // Correct image URL (replace backslashes with forward slashes)
-          img.src = `https://r2fold.vercel.app/${image.url.replace(/\\/g, '/')}`;
+          img.src = `https://r2f.vercel.app/${image.url.replace(/\\/g, '/')}`;
           img.alt = image.statement;
           img.style.width = '200px'; // Optional: Adjust the size of the image
           img.classList.add('clickable-image'); // Add a class for identifying clickable images
@@ -1252,7 +1252,7 @@
       alert("Booking your plan, please wait...");
 
       try {
-        const response = await fetch('https://r2fold.vercel.app/select-plan', {
+        const response = await fetch('https://r2f.vercel.app/select-plan', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userName, planType })
