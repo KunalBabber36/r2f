@@ -547,33 +547,33 @@ app.post('/comments', async (req, res) => {
 
 // Routes for images
 // Upload image with statement
-// app.post('/upload', upload.single('image'), async (req, res) => {
-//   if (!req.file) {
-//     return res.status(400).json({ message: 'No file uploaded' });
-//   }
+app.post('/upload', upload.single('image'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: 'No file uploaded' });
+  }
 
-//   const image = new Image({
-//     url: req.file.path,
-//     statement: req.body.statement
-//   });
+  const image = new Image({
+    url: req.file.path,
+    statement: req.body.statement
+  });
 
-//   try {
-//     await image.save();
-//     res.status(200).json({ message: 'Image uploaded successfully', file: req.file });
-//   } catch (error) {
-//     res.status(500).json({ message: 'Error saving image to database', error });
-//   }
-// });
+  try {
+    await image.save();
+    res.status(200).json({ message: 'Image uploaded successfully', file: req.file });
+  } catch (error) {
+    res.status(500).json({ message: 'Error saving image to database', error });
+  }
+});
 
-// // Fetch images
-// app.get('/images', async (req, res) => {
-//   try {
-//     const images = await Image.find();
-//     res.status(200).json(images);
-//   } catch (error) {
-//     res.status(500).json({ message: 'Error fetching images', error });
-//   }
-// });
+// Fetch images
+app.get('/images', async (req, res) => {
+  try {
+    const images = await Image.find();
+    res.status(200).json(images);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching images', error });
+  }
+});
 
 // Serve the display page
 app.get('/display', (req, res) => {
