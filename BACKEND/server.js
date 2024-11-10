@@ -147,12 +147,13 @@ app.post('/submit', async (req, res) => {
 //     `);
 // });
 
-app.get('/admin', isAuthenticated, async (req, res) => {
+app.get('/admin', isAuthenticated, async (req, res) => { 
   try {
-      // Fetch form details
+      // Fetch form details, comments, plans, and images
       const formDetails = await FormDetail.find();
       const comments = await Comment.find();
       const plans = await Plan.find();
+      const images = await Image.find(); // Assuming you have an 'Image' model for storing image data
 
       // Send HTML content with added styling
       res.send(`
@@ -163,126 +164,47 @@ app.get('/admin', isAuthenticated, async (req, res) => {
               <meta name="viewport" content="width=device-width, initial-scale=1.0">
               <title>Admin Dashboard</title>
               <style>
- body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            color: #333;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            max-width: 1200px;
-            margin: auto;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            position: relative;
-        }
-        h1 {
-            color: #444;
-        }
-        .tabs_list {
-            display: flex;
-            list-style-type: none;
-            padding: 0;
-            transition: max-height 0.3s ease;
-        }
-        .tabs_list li {
-            margin-right: 20px;
-            padding: 10px;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-        }
-        .tabs_list li.active {
-            border-bottom: 2px solid #007bff;
-            font-weight: bold;
-        }
-        .tab_body {
-            display: none;
-        }
-        .tab_body.active {
-            display: block;
-        }
-        .card {
-            background-color: #fafafa;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-        .comment-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-        }
-        .delete-button {
-            background-color: #ff4d4d;
-            color: #fff;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 3px;
-            cursor: pointer;
-        }
-        .delete-button:hover {
-            background-color: #e60000;
-        }
-        a {
-            text-decoration: none;
-            color: #007bff;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-
-        /* Hamburger Menu Styles */
-        .hamburger {
-            display: none;
-            font-size: 30px;
-            cursor: pointer;
-            border: 1px solid #444;
-            padding: 5px;
-            border-radius: 5px;
-        }
-
-        /* Responsive Styles */
-        @media (max-width: 768px) {
-            .tabs_list {
-                display: none;
-                flex-direction: column;
-                background-color: #fff;
-                border: 1px solid #ddd;
-                border-radius: 8px;
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                padding: 10px;
-                position: absolute;
-                top: 60px;
-                right: 20px;
-                z-index: 10;
-            }
-            .tabs_list.show {
-                display: flex;
-            }
-            .hamburger {
-                display: block;
-                position: absolute;
-                top: 20px;
-                right: 20px;
-            }
-        }              </style>
+                  /* Existing styles here */
+                  body {
+                      font-family: Arial, sans-serif;
+                      background-color: #f4f4f9;
+                      color: #333;
+                      margin: 0;
+                      padding: 20px;
+                  }
+                  .container {
+                      max-width: 1200px;
+                      margin: auto;
+                      padding: 20px;
+                      background-color: #fff;
+                      border-radius: 8px;
+                      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                      position: relative;
+                  }
+                  h1 {
+                      color: #444;
+                  }
+                  /* Add the styles for image items here */
+                  .image-item {
+                      margin-bottom: 15px;
+                  }
+                  .delete-button {
+                      color: red;
+                      cursor: pointer;
+                  }
+              </style>
           </head>
           <body>
               <div class="container">
                   <h1>Admin Dashboard</h1>
                   <div class="hamburger" onclick="toggleMenu()">☰</div>
 
+                  <!-- Tabs and content -->
                   <ul class="tabs_list">
                       <li data-tab="formDetails" class="active">Submitted Form Details</li>
                       <li data-tab="comments">Manage Comments</li>
                       <li data-tab="plans">Selected Gym Plans</li>
+                      <li data-tab="images">Manage Images</li> <!-- New tab for images -->
                   </ul>
 
                   <div class="tab_body active" id="formDetails">
@@ -318,48 +240,116 @@ app.get('/admin', isAuthenticated, async (req, res) => {
                       `).join('')}
                   </div>
 
+                  <div class="tab_body" id="images">
+                      <h2>Upload Image with Statement</h2>
+                      <form id="uploadForm" enctype="multipart/form-data">
+                          <input type="file" name="image" id="imageInput" required><br><br>
+                          <input type="text" name="statement" id="statementInput" placeholder="Enter a statement" required><br><br>
+                          <button type="submit">Upload</button>
+                      </form>
+
+                      <h2>Uploaded Images</h2>
+                      <div id="imagesList">
+                          ${images.map(image => `
+                              <div class="image-item">
+                                  <img src="${image.url}" width="200"><br>
+                                  <p>${image.statement}</p>
+                                  <button class="delete-button" onclick="deleteImage('${image._id}')">Delete</button>
+                              </div>
+                          `).join('')}
+                      </div>
+                  </div>
+
                   <a href="/logout">Logout</a>
               </div>
 
               <script>
- // Function to toggle the hamburger menu
-        function toggleMenu() {
-            const tabsList = document.querySelector('.tabs_list');
-            tabsList.classList.toggle('show');
-        }
+                  // Function to toggle the hamburger menu
+                  function toggleMenu() {
+                      const tabsList = document.querySelector('.tabs_list');
+                      tabsList.classList.toggle('show');
+                  }
 
-        // Tab switching functionality
-        const tabs = document.querySelectorAll('.tabs_list li');
-        const tabBodies = document.querySelectorAll('.tab_body');
+                  // Tab switching functionality
+                  const tabs = document.querySelectorAll('.tabs_list li');
+                  const tabBodies = document.querySelectorAll('.tab_body');
 
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                tabs.forEach(t => t.classList.remove('active'));
-                tabBodies.forEach(body => body.classList.remove('active'));
+                  tabs.forEach(tab => {
+                      tab.addEventListener('click', () => {
+                          tabs.forEach(t => t.classList.remove('active'));
+                          tabBodies.forEach(body => body.classList.remove('active'));
 
-                tab.classList.add('active');
-                document.getElementById(tab.getAttribute('data-tab')).classList.add('active');
+                          tab.classList.add('active');
+                          document.getElementById(tab.getAttribute('data-tab')).classList.add('active');
+                      });
+                  });
 
-                // Close menu on tab click for smaller screens
-                if (window.innerWidth <= 768) {
-                    document.querySelector('.tabs_list').classList.remove('show');
-                }
-            });
-        });
+                  // Function to delete a comment
+                  function deleteComment(commentId) {
+                      fetch('/comments/' + commentId, { method: 'DELETE' })
+                          .then(response => response.json())
+                          .then(data => {
+                              if (data.message === 'Comment deleted successfully') {
+                                  location.reload();
+                              } else {
+                                  alert('Error deleting comment');
+                              }
+                          })
+                          .catch(error => console.error('Error deleting comment:', error));
+                  }
 
-        // Function to delete a comment
-         function deleteComment(commentId) {
-            fetch('/comments/' + commentId, { method: 'DELETE' })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.message === 'Comment deleted successfully') {
-                        location.reload(); // Refresh the page to update comments
-                    } else {
-                        alert('Error deleting comment');
-                    }
-                })
-                .catch(error => console.error('Error deleting comment:', error));
-        }              </script>
+                  // Function to delete an image
+                  async function deleteImage(id) {
+                      if (confirm('Are you sure you want to delete this image?')) {
+                          try {
+                              const response = await fetch('/images/' + id, { method: 'DELETE' });
+                              const result = await response.json();
+                              alert(result.message);
+                              fetchImages(); // Refresh the image list
+                          } catch (error) {
+                              console.error('Error deleting image:', error);
+                          }
+                      }
+                  }
+
+                  // Handle form submission for image upload
+                  document.getElementById('uploadForm').addEventListener('submit', async (event) => {
+                      event.preventDefault();
+                      const formData = new FormData(uploadForm);
+
+                      try {
+                          const response = await fetch('/upload', { method: 'POST', body: formData });
+                          const result = await response.json();
+                          alert(result.message);
+                          fetchImages(); // Refresh the image list after upload
+                      } catch (error) {
+                          console.error('Error uploading image:', error);
+                      }
+                  });
+
+                  // Fetch and display images on page load
+                  async function fetchImages() {
+                      try {
+                          const response = await fetch('/images');
+                          const images = await response.json();
+                          const imagesList = document.getElementById('imagesList');
+                          imagesList.innerHTML = '';
+                          images.forEach(image => {
+                              const imgDiv = document.createElement('div');
+                              imgDiv.classList.add('image-item');
+                              imgDiv.innerHTML = \`
+                                  <img src="\${image.url}" width="200"><br>
+                                  <p>\${image.statement}</p>
+                                  <button onclick="deleteImage('\${image._id}')">Delete</button>
+                              \`;
+                              imagesList.appendChild(imgDiv);
+                          });
+                      } catch (error) {
+                          console.error('Error fetching images:', error);
+                      }
+                  }
+                  fetchImages(); // Fetch images when the page loads
+              </script>
           </body>
           </html>
       `);
