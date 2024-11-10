@@ -493,6 +493,17 @@ app.delete('/images/:id', async (req, res) => {
     res.status(500).json({ message: 'Error deleting image', error });
   }
 });
+const response = await fetch('/images', { method: 'POST', body: formData });
+const text = await response.text();  // Log the response as text
+console.log(text);  // This will show if the response is HTML
+
+try {
+    const result = JSON.parse(text);
+    alert(result.message);
+} catch (error) {
+    console.error("Error parsing JSON:", error);
+}
+
 // Delete a comment
 app.delete('/comments/:id', async (req, res) => {
   const { id } = req.params;
