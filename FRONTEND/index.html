@@ -802,17 +802,19 @@
     </div>
   </section>
 
-  <!-- <section class="blog" id="blog">
+  <section class="blog" id="blog">
     <div class="section__container blog__container">
       <h2 class="section__header">GYM UPDATES</h2>
       <div class="blog__grid">
         <div class="blog__card">
-          <div id="image-gallery"></div>
-        </div>
+          <div id="imagesList">
+            <!-- Images will be dynamically injected here by JavaScript -->
+          </div>
+                </div>
         <div class="blog__btn">
         </div>
       </div>
-  </section> -->
+  </section>
   <div class="comments-container">
     <h2>Leave a Comment</h2>
     <form id="commentForm">
@@ -1165,21 +1167,11 @@
     // Load comments on page load
     window.onload = loadComments;
 
-    // Full-screen function
-    function openImageInFullScreen(imageElement) {
-      if (imageElement.requestFullscreen) {
-        imageElement.requestFullscreen();
-      } else if (imageElement.mozRequestFullScreen) { // Firefox
-        imageElement.mozRequestFullScreen();
-      } else if (imageElement.webkitRequestFullscreen) { // Chrome, Safari, Opera
-        imageElement.webkitRequestFullscreen();
-      } else if (imageElement.msRequestFullscreen) { // IE/Edge
-        imageElement.msRequestFullscreen();
-      }
-    }
+   
 
+ // JavaScript code goes here
     // Fetch images from the server
-    fetch('https://r2f.vercel.app/images') // Specify full URL for better debugging
+    fetch('http://localhost:3000/images') // Specify full URL for better debugging
       .then(response => {
         if (!response.ok) {
           throw new Error('Network response was not ok: ' + response.statusText);
@@ -1187,14 +1179,14 @@
         return response.json();
       })
       .then(images => {
-        const gallery = document.getElementById('image-gallery');
+        const gallery = document.getElementById('imagesList');
         gallery.innerHTML = ''; // Clear existing gallery content
 
         images.forEach(image => {
           // Create an img element for each image
           const img = document.createElement('img');
           // Correct image URL (replace backslashes with forward slashes)
-          img.src = `https://r2f.vercel.app/${image.url.replace(/\\/g, '/')}`;
+          img.src = `http://localhost:3000/${image.url.replace(/\\/g, '/')}`;
           img.alt = image.statement;
           img.style.width = '200px'; // Optional: Adjust the size of the image
           img.classList.add('clickable-image'); // Add a class for identifying clickable images
@@ -1225,10 +1217,10 @@
       })
       .catch(err => {
         console.error('Error fetching images:', err);
-        // alert('Could not load images. Please check the console for details.'); // Alert user
+        alert('Could not load images. Please check the console for details.'); // Alert user
       });
 
-    // Function to open image in full-screen mode (you need to define this)
+    // Function to open image in full-screen mode
     function openImageInFullScreen(imageElement) {
       if (imageElement.requestFullscreen) {
         imageElement.requestFullscreen();
@@ -1237,8 +1229,7 @@
       } else if (imageElement.msRequestFullscreen) { // IE11
         imageElement.msRequestFullscreen();
       }
-    }
-    async function selectPlan(event, planType) {
+    }    async function selectPlan(event, planType) {
       event.preventDefault();
 
       const userName = prompt("Please enter your name to sign up:");

@@ -404,52 +404,6 @@ const commentSchema = new mongoose.Schema({
   comment: String,
 });
 const Comment = mongoose.model('Comment', commentSchema);
-
-// Define image schema
-const imageSchema = new mongoose.Schema({
-  url: { type: String, required: true },
-  statement: { type: String, required: true }
-});
-const Image = mongoose.model('Image', imageSchema);
-
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
-});
-const upload = multer({ storage });
-
-// Upload image with statement
-app.post('/upload', upload.single('image'), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ message: 'No file uploaded' });
-  }
-
-  const image = new Image({
-    url: req.file.path,
-    statement: req.body.statement
-  });
-
-  try {
-    await image.save();
-    res.status(200).json({ message: 'Image uploaded successfully', file: req.file });
-  } catch (error) {
-    res.status(500).json({ message: 'Error saving image to database', error });
-  }
-});
-// Fetch images
-app.get('/images', async (req, res) => {
-  try {
-    const images = await Image.find();
-    res.status(200).json(images);
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching images', error });
-  }
-});
 app.get('/', (req, res) => {
   res.send('Hello from Vercel!');
 });
@@ -461,38 +415,6 @@ app.get('/api/data', (req, res) => {
 });
 
 
-// Delete image
-app.delete('/images/:id', async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    // Find the image by ID
-    const image = await Image.findById(id);
-    if (!image) {
-      return res.status(404).json({ message: 'Image not found' });
-    }
-
-    // Check if the file exists
-    fs.access(image.url, fs.constants.F_OK, (err) => {
-      if (err) {
-        return res.status(404).json({ message: 'File not found' });
-      }
-
-      // Delete the image file from the uploads folder
-      fs.unlink(path.resolve(image.url), async (err) => {
-        if (err) {
-          return res.status(500).json({ message: 'Error deleting file', error: err });
-        }
-
-        // After the file is deleted, remove the entry from MongoDB using deleteOne()
-        await Image.deleteOne({ _id: id });
-        res.status(200).json({ message: 'Image deleted successfully' });
-      });
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Error deleting image', error });
-  }
-});
 // Delete a comment
 app.delete('/comments/:id', async (req, res) => {
   const { id } = req.params;
@@ -544,36 +466,84 @@ app.post('/comments', async (req, res) => {
     res.status(500).json({ message: 'Error saving comment', error });
   }
 });
+// Define image schema and model
+const imageSchema = new mongoose.Schema({
+  url: { type: String, required: true },
+  statement: { type: String, required: true }
+});
+const Image = mongoose.model('Image', imageSchema);
 
-// Routes for images
-// Upload image with statement
-// app.post('/upload', upload.single('image'), async (req, res) => {
-//   if (!req.file) {
-//     return res.status(400).json({ message: 'No file uploaded' });
-//   }
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
+const upload = multer({ storage });
 
-//   const image = new Image({
-//     url: req.file.path,
-//     statement: req.body.statement
-//   });
+// Route to upload image with statement
+app.post('/upload', upload.single('image'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: 'No file uploaded' });
+  }
 
-//   try {
-//     await image.save();
-//     res.status(200).json({ message: 'Image uploaded successfully', file: req.file });
-//   } catch (error) {
-//     res.status(500).json({ message: 'Error saving image to database', error });
-//   }
-// });
+  const image = new Image({
+    url: req.file.path,
+    statement: req.body.statement
+  });
 
-// // Fetch images
-// app.get('/images', async (req, res) => {
-//   try {
-//     const images = await Image.find();
-//     res.status(200).json(images);
-//   } catch (error) {
-//     res.status(500).json({ message: 'Error fetching images', error });
-//   }
-// });
+  try {
+    await image.save();
+    res.status(200).json({ message: 'Image uploaded successfully', file: req.file });
+  } catch (error) {
+    res.status(500).json({ message: 'Error saving image to database', error });
+  }
+});
+
+// Route to fetch images
+app.get('/images', async (req, res) => {
+  try {
+    const images = await Image.find();
+    res.status(200).json(images);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching images', error });
+  }
+});
+
+// Route to delete an image by ID
+app.delete('/images/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Find the image by ID
+    const image = await Image.findById(id);
+    if (!image) {
+      return res.status(404).json({ message: 'Image not found' });
+    }
+
+    // Check if the file exists and delete it
+    fs.access(image.url, fs.constants.F_OK, (err) => {
+      if (err) {
+        return res.status(404).json({ message: 'File not found' });
+      }
+
+      fs.unlink(path.resolve(image.url), async (err) => {
+        if (err) {
+          return res.status(500).json({ message: 'Error deleting file', error: err });
+        }
+
+        // Remove the document from MongoDB after file deletion
+        await Image.deleteOne({ _id: id });
+        res.status(200).json({ message: 'Image deleted successfully' });
+      });
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting image', error });
+  }
+});
 
 // Serve the display page
 app.get('/display', (req, res) => {
