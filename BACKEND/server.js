@@ -468,30 +468,43 @@ app.post('/comments', async (req, res) => {
 });
 // Define image schema and model
 const imageSchema = new mongoose.Schema({
-  url: { type: String, required: true },
-  statement: { type: String, required: true }
+  filename: { type: String, required: true },
+  statement: { type: String, required: true },
 });
 const Image = mongoose.model('Image', imageSchema);
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
+// Connect to MongoDB
+const mongoURI = process.env.MONGODB_URI;
+mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
+
+// Configure multer-gridfs-storage for file uploads
+const storage = new GridFsStorage({
+  url: mongoURI,
+  options: { useNewUrlParser: true, useUnifiedTopology: true },
+  file: (req, file) => {
+    return {
+      filename: Date.now() + path.extname(file.originalname), // Customize filename
+      bucketName: 'uploads' // Set the bucket name for GridFS
+    };
   }
 });
 const upload = multer({ storage });
+
+// Middleware to handle JSON requests
+app.use(express.json());
 
 // Route to upload image with statement
 app.post('/upload', upload.single('image'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: 'No file uploaded' });
   }
+  
+  if (!req.body.statement || req.body.statement.trim() === "") {
+    return res.status(400).json({ message: 'Statement is required' });
+  }
 
   const image = new Image({
-    url: req.file.path,
+    filename: req.file.filename,
     statement: req.body.statement
   });
 
@@ -503,7 +516,7 @@ app.post('/upload', upload.single('image'), async (req, res) => {
   }
 });
 
-// Route to fetch images
+// Route to fetch images (metadata only, no image data)
 app.get('/images', async (req, res) => {
   try {
     const images = await Image.find();
@@ -513,33 +526,42 @@ app.get('/images', async (req, res) => {
   }
 });
 
+// Route to fetch an image by filename from GridFS
+app.get('/images/:filename', async (req, res) => {
+  const { filename } = req.params;
+  const gfs = new mongoose.mongo.GridFSBucket(mongoose.connection.db, { bucketName: 'uploads' });
+
+  try {
+    const file = await gfs.find({ filename }).toArray();
+    if (!file || file.length === 0) {
+      return res.status(404).json({ message: 'Image not found' });
+    }
+    
+    gfs.openDownloadStreamByName(filename).pipe(res);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching image', error });
+  }
+});
+
 // Route to delete an image by ID
 app.delete('/images/:id', async (req, res) => {
   const { id } = req.params;
 
   try {
-    // Find the image by ID
     const image = await Image.findById(id);
     if (!image) {
       return res.status(404).json({ message: 'Image not found' });
     }
 
-    // Check if the file exists and delete it
-    fs.access(image.url, fs.constants.F_OK, (err) => {
-      if (err) {
-        return res.status(404).json({ message: 'File not found' });
-      }
+    const gfs = new mongoose.mongo.GridFSBucket(mongoose.connection.db, { bucketName: 'uploads' });
+    const file = await gfs.find({ filename: image.filename }).toArray();
+    if (!file || file.length === 0) {
+      return res.status(404).json({ message: 'File not found in database' });
+    }
 
-      fs.unlink(path.resolve(image.url), async (err) => {
-        if (err) {
-          return res.status(500).json({ message: 'Error deleting file', error: err });
-        }
-
-        // Remove the document from MongoDB after file deletion
-        await Image.deleteOne({ _id: id });
-        res.status(200).json({ message: 'Image deleted successfully' });
-      });
-    });
+    await gfs.delete(file[0]._id); // Delete file from GridFS
+    await Image.deleteOne({ _id: id }); // Delete document from MongoDB
+    res.status(200).json({ message: 'Image deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error deleting image', error });
   }
